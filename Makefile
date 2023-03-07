@@ -1,16 +1,16 @@
-INCLUDE_FILES = -iquotesrc
-INCLUDE_FILES += -I lib/SDL/include
+INCLUDE_FILES = -I lib/SDL/include
+
+CHENGE_FILES = $(wildcard bin/chenge/*.o)
 
 LIB_LINKS = -lm
 LIB_LINKS += $(shell bin/sdl/sdl2-config --prefix=bin --static-libs)
 
 default: all
 
-all: build clean
+all: build
 
 clean:
-	-rm -f bin/*.o
-
+	-rm -rf bin/src
 
 mkbin:
 	mkdir -p bin/src
@@ -18,8 +18,15 @@ mkbin:
 %.o: src/%.c mkbin
 	cc -o bin/src/$@ -c $(INCLUDE_FILES) $<
 
-build: application.o
-	cc -o bin/app bin/src/application.o $(LIB_LINKS)
+build: window.o
+	cc -o bin/app bin/src/window.o $(CHENGE_FILES) $(LIB_LINKS)
+
+pong: pong.o
+	cc -o bin/pong bin/src/pong.o $(LIB_LINKS)
+
+chenge:
+	mkdir -p bin/chenge
+	cd src/CHenge && for i in *.c; do cc -o ../../bin/chenge/$${i%%.*}.o -c $(INCLUDE_FILES) $${i}; done
 
 sdl:
 	mkdir -p bin/sdl
