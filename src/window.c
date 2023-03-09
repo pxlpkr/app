@@ -58,8 +58,6 @@ void iterate_game_loop(void) {
 }
 
 void initialize(void) {
-    CH_Vec2D dimensions = {WIDTH, HEIGHT};
-
     app.window = SDL_CreateWindow(
         TITLE,
         SDL_WINDOWPOS_CENTERED,
@@ -83,7 +81,13 @@ void initialize(void) {
         HEIGHT
     );
 
-    app.renderer3d = CH_Renderer_Create(&dimensions);
+    app.renderer3d = CH_Renderer_Create(WIDTH, HEIGHT);
+
+    CH_Array_Append(app.renderer3d->geometry, CH_Geometry_Create(
+        CH_Vector_Create(10, 10, 10),
+        CH_Vector_Create(200, 10, 15),
+        CH_Vector_Create(20, 30, 10)
+    ));
 }
 
 int main() {
@@ -95,6 +99,8 @@ int main() {
     SDL_DestroyTexture(app.texture);
     SDL_DestroyRenderer(app.renderer);
     SDL_DestroyWindow(app.window);
+
+    CH_Renderer_Destroy(app.renderer3d);
 
     return 0;
 }

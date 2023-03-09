@@ -7,9 +7,10 @@ LIB_LINKS += $(shell bin/sdl/sdl2-config --prefix=bin --static-libs)
 
 default: all
 
-all: build
+all: build clean
 
 clean:
+	-rm -rf bin/chenge
 	-rm -rf bin/src
 
 mkbin:
@@ -18,7 +19,7 @@ mkbin:
 %.o: src/%.c mkbin
 	cc -o bin/src/$@ -c $(INCLUDE_FILES) $<
 
-build: window.o
+build: chenge window.o
 	cc -o bin/app bin/src/window.o $(CHENGE_FILES) $(LIB_LINKS)
 
 pong: pong.o

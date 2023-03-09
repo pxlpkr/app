@@ -17,6 +17,15 @@ void CH_Array_Destroy(CH_Array* array_p) {
     free(array_p);
 }
 
+/**
+ * Doubles the size of the array in memory
+ *
+ * First, doubles the declared memory size of the struct and allocates
+ * new memory equal to the new size. Then updates the old pointer to
+ * the array with the newly expanded array.
+ *
+ * \param array_p pointer to the array
+ */
 void array_memory_extend(CH_Array* array_p) {
     array_p->size *= 2;
     void** content_p = (void**) realloc(array_p->at, array_p->size * sizeof(void*));

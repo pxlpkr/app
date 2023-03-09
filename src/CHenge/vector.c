@@ -1,6 +1,26 @@
+#include <stdlib.h>
+#include <math.h>
+
 #include "vector.h"
 
-CH_Vec2D CH_Vec2D_sum(CH_Vec2D* a, CH_Vec2D* b) {
-    CH_Vec2D vector = {a->x + b->x, a->y + b->y};
-    return vector;
+CH_Vector* CH_Vector_Create(double x, double y, double z) {
+    CH_Vector* vec = malloc(sizeof(CH_Vector));
+
+    vec->x = x;
+    vec->y = y;
+    vec->z = z;
+
+    return vec;
+}
+
+void CH_Vector_Destroy(CH_Vector* vector) {
+    free(vector);
+}
+
+CH_Vector* CH_Vector_Sum(CH_Vector* a, CH_Vector* b) {
+    return CH_Vector_Create(a->x + b->x, a->y + b->y, a->z + b->z);
+}
+
+double CH_Vector_GetMagnitude(CH_Vector* v) {
+    return sqrt(pow(v->x, 2) + pow(v->y, 2) + pow(v->z, 2));
 }

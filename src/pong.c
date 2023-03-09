@@ -218,7 +218,7 @@ int main() {
     app.game.paddle_1.width = 20;
     app.game.paddle_1.height = 80;
     app.game.paddle_2.width = 20;
-    app.game.paddle_2.height = 80;
+    app.game.paddle_2.height = HEIGHT;
     app.game.paddle_1.x = app.game.paddle_1.width;
     app.game.paddle_1.y = HEIGHT / 2 - app.game.paddle_1.height / 2;
     app.game.paddle_2.x = WIDTH - 2 * app.game.paddle_2.width;
