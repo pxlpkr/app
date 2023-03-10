@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <time.h>
+// #include <time.h>
 
 #include "renderer.h"
 
@@ -30,11 +30,10 @@ void CH_Renderer_Destroy(CH_Renderer* renderer) {
     free(renderer);
 }
 
-int z_positive(CH_Vector* vecs[]) {
-    for (int i = 0; i < 3; i++) {
-        if (vecs[i]->z > 0)
+int z_positive(CH_Vector vecs[]) {
+    for (int i = 0; i < 3; i++)
+        if (vecs[i].z > 0)
             return 1;
-    }
     return 0;
 }
 
@@ -44,8 +43,8 @@ void render_pixel(CH_Renderer* renderer, u_int32_t buffer[], int x, int y, u_int
     buffer[y * renderer->width + x] = color;
 }
 
-int get_in_triangle(int x, int y, CH_Point* verts[]) {
-    CH_Point* v0, *v1;
+int get_in_triangle(int x, int y, CH_Point verts[]) {
+    CH_Point v0, v1;
 
     for (int i = 0; i < 3; i++) {
         v0 = verts[i];
@@ -54,32 +53,30 @@ int get_in_triangle(int x, int y, CH_Point* verts[]) {
         else
             v1 = verts[i + 1];
 
-        if ((v1->x - v0->x)*(y - v0->y) - (v1->y - v0->y)*(x - v0->x) < 0)
+        if ((v1.x - v0.x)*(y - v0.y) - (v1.y - v0.y)*(x - v0.x) < 0)
             return 0;
     }
 
     return 1;
 }
 
-double get_avg_dist(CH_Vector* locations[]) {
-    double dist = locations[0]->z;
+double get_avg_dist(CH_Vector locations[]) {
+    double dist = locations[0].z;
     for (int i = 1; i < 3; i++) {
-        CH_Vector* vector = locations[i];
-        dist += vector->z;
+        CH_Vector vector = locations[i];
+        dist += vector.z;
     }
     return dist / 3;
 }
 
 void render_geometry(CH_Renderer* renderer, CH_Geometry* geometry, u_int32_t buffer[], double zbuffer[]) {
 
-    //#Runtime ~9 ms
-    CH_Vector* locations3d[] = {
+    CH_Vector locations3d[] = {
         CH_Camera_GetRelativeCoordinates(renderer->camera, geometry->vertices[0]),
         CH_Camera_GetRelativeCoordinates(renderer->camera, geometry->vertices[1]),
         CH_Camera_GetRelativeCoordinates(renderer->camera, geometry->vertices[2])
     };
-    //#End
-
+    
     if (!z_positive(locations3d))
         return;
 
@@ -88,28 +85,24 @@ void render_geometry(CH_Renderer* renderer, CH_Geometry* geometry, u_int32_t buf
     int min_y = renderer->height;
     int max_y = 0;
 
-    // clock_t start = clock();
-
-    CH_Point* locations2d[] = {
-        CH_Camera_Transform(renderer->camera, locations3d[0]),
-        CH_Camera_Transform(renderer->camera, locations3d[1]),
-        CH_Camera_Transform(renderer->camera, locations3d[2])
+    //#Runtime || 6.4 - 6.7 ms
+    CH_Point locations2d[] = {
+        CH_Camera_Transform(renderer->camera, &locations3d[0]),
+        CH_Camera_Transform(renderer->camera, &locations3d[1]),
+        CH_Camera_Transform(renderer->camera, &locations3d[2])
     };
-
-    // clock_t end = clock();
-
-    // renderer->t_lump += (double) (end - start) * 1000.0 / CLOCKS_PER_SEC;
+    //#End
 
     for (int i = 0; i < 3; i++) {
-        CH_Point* p = locations2d[i];
-        if (p->x > max_x)
-            max_x = p->x;
-        if (p->x < min_x)
-            min_x = p->x;
-        if (p->y > max_y)
-            max_y = p->y;
-        if (p->y < min_y)
-            min_y = p->y;
+        CH_Point p = locations2d[i];
+        if (p.x > max_x)
+            max_x = p.x;
+        if (p.x < min_x)
+            min_x = p.x;
+        if (p.y > max_y)
+            max_y = p.y;
+        if (p.y < min_y)
+            min_y = p.y;
     }
 
     if (min_x < 0)
@@ -125,18 +118,12 @@ void render_geometry(CH_Renderer* renderer, CH_Geometry* geometry, u_int32_t buf
 
     for (int x = min_x; x < max_x; x++) {
         for (int y = min_y; y < max_y; y++) {
-            if (get_in_triangle(x, y, locations2d) && dist < zbuffer[y * renderer->width + x]) {
+            if (dist < zbuffer[y * renderer->width + x] && get_in_triangle(x, y, locations2d)) {
                 zbuffer[y * renderer->width + x] = dist;
                 render_pixel(renderer, buffer, x, y, geometry->color);
             }
         }
     }
-
-    //Dealloc time!
-    for (int i = 0; i < 3; i++)
-        CH_Vector_Destroy(locations3d[i]);
-    for (int i = 0; i < 3; i++)
-        CH_Point_Destroy(locations2d[i]);
 }
 
 void CH_Renderer_Render(CH_Renderer* renderer, u_int32_t buffer[]) {

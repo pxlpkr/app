@@ -19,6 +19,7 @@ struct {
     CH_Renderer* renderer3d;
 
     u_int32_t buffer[WIDTH * HEIGHT];
+    double heights[200][200];
 
     int exit_requested;
 } app;
@@ -76,6 +77,11 @@ void kb_handler() {
     if (pressed_keys[SDL_SCANCODE_DOWN]) {
         CH_Camera_RotatePitch(app.renderer3d->camera, rotateSpeed);
     }
+
+    // if (app.renderer3d->camera->x > 0 && app.renderer3d->camera->x < 200 &&
+    //     app.renderer3d->camera->z > 0 && app.renderer3d->camera->z < 200) {
+    //         app.renderer3d->camera->y = app.heights[(int) app.renderer3d->camera->x][(int) app.renderer3d->camera->x];
+    //     }
 }
 
 void iterate_game_loop(void) {
@@ -113,28 +119,38 @@ void iterate_game_loop(void) {
         nanosleep(&delay, NULL);
     }
 
-    // printf("%f \n", app.renderer3d->t_lump);
-    // app.renderer3d->t_lump = 0;
+    printf("%f ms \n", time_elapsed);
+}
+
+u_int32_t get_mesh_color() {
+    int CLR = rand();
+
+    return 0x000000FF
+        + 128 + CLR % 128 * 0x100
+        + 128 + CLR % 128 * 0x100 * 0x100
+        + 128 + CLR % 128 * 0x100 * 0x100 * 0x100;
 }
 
 void make_ground_mesh(void) {
-    int W = 100;
-    int H = 100;
-    double heights[W][H];
+    int W = 200;
+    int H = 200;
+
+    double I = 1;
+    double I_2 = 0.5;
 
     for (int i = 0; i < W; i++) {
         for (int j = 0; j < W; j++) {
             if (i == 0) {
                 if (j == 0) {
-                    heights[i][j] = 10;
+                    app.heights[i][j] = 10;
                 } else {
-                    heights[i][j] = heights[i][j-1] + (double) rand() * 2 / MAX_INT - 1;
+                    app.heights[i][j] = app.heights[i][j-1] + (double) rand() * I / MAX_INT - I_2;
                 }
             } else {
                 if (j == 0) {
-                    heights[i][j] = heights[i-1][j] + (double) rand() * 2 / MAX_INT - 1;
+                    app.heights[i][j] = app.heights[i-1][j] + (double) rand() * I / MAX_INT - I_2;
                 } else {
-                    heights[i][j] = (heights[i][j-1]+heights[i-1][j])/2 + (double) rand() * 2 / MAX_INT - 1;
+                    app.heights[i][j] = (app.heights[i][j-1]+app.heights[i-1][j])/2 + (double) rand() * I / MAX_INT - I_2;
                 }
             }
         }
@@ -143,75 +159,29 @@ void make_ground_mesh(void) {
     for (int i = 0; i < W - 1; i++) {
         for (int j = 0; j < H - 1; j++) {
             CH_Geometry* g1 = CH_Geometry_Create(
-                CH_Vector_Create(i+1, heights[i+1][j+1], j+1),
-                CH_Vector_Create(i+1, heights[i+1][j], j),
-                CH_Vector_Create(i, heights[i][j], j)
+                CH_Vector_Create(i+1, app.heights[i+1][j+1], j+1),
+                CH_Vector_Create(i+1, app.heights[i+1][j], j),
+                CH_Vector_Create(i, app.heights[i][j], j)
             );
 
-            g1->color = 0x007832FF + rand() % 180 * 0x100 * 0x100 * 0x100;
+            // g1->color = 0x007832FF + rand() % 180 * 0x100 * 0x100 * 0x100;
+            g1->color = get_mesh_color();
 
             CH_Array_Append(app.renderer3d->geometry, g1);
 
             CH_Geometry* g2 = CH_Geometry_Create(
-                CH_Vector_Create(i+1, heights[i+1][j+1], j+1),
-                CH_Vector_Create(i, heights[i][j], j),
-                CH_Vector_Create(i, heights[i][j+1], j+1)
+                CH_Vector_Create(i+1, app.heights[i+1][j+1], j+1),
+                CH_Vector_Create(i, app.heights[i][j], j),
+                CH_Vector_Create(i, app.heights[i][j+1], j+1)
             );
 
-            g2->color = 0x007832FF + rand() % 180 * 0x100 * 0x100 * 0x100;
+            // g2->color = 0x007832FF + rand() % 180 * 0x100 * 0x100 * 0x100;
+
+            g2->color = get_mesh_color();
 
             CH_Array_Append(app.renderer3d->geometry, g2);
         }
     }
-
-    // for (int i = 0; i < W; i+=2) {
-    //     for (int j = 0; j < H; j+=2) {
-    //         if (j == H-1)
-    //             continue;
-
-    //         CH_Geometry* g = CH_Geometry_Create(
-    //             CH_Vector_Create(i-50, heights[i][j], j-50),
-    //             CH_Vector_Create(i-50, heights[i][j+1], j-49),
-    //             CH_Vector_Create(i-49, heights[i+1][j], j-50)
-    //         );
-    //         g->color = 0x007832FF + rand() % 180 * 0x100 * 0x100 * 0x100;
-
-    //         CH_Array_Append(app.renderer3d->geometry, g);
-
-    //         CH_Geometry* g2 = CH_Geometry_Create(
-    //             CH_Vector_Create(i-49, heights[i+1][j+1], j-49),
-    //             CH_Vector_Create(i-50, heights[i][j+1], j-49),
-    //             CH_Vector_Create(i-49, heights[i+1][j], j-50)
-    //         );
-    //         g2->color = 0x007832FF + rand() % 180 * 0x100 * 0x100 * 0x100;
-
-    //         CH_Array_Append(app.renderer3d->geometry, g2);
-    //     }
-    // }
-
-    //u_int32_t color = 0x007832FF + rand() % 180 * 0x100 * 0x100 * 0x100;
-
-    // CH_Geometry* g1 = CH_Geometry_Create(
-    //     CH_Vector_Create(i-1, heights[i-1][j-1], j-1),
-    //     CH_Vector_Create(i-1, heights[i-1][j  ], j),
-    //     CH_Vector_Create(i-1, heights[i-1][j-1], j-1)
-    // );
-    // g1->color = color;
-
-    // CH_Array_Append(app.renderer3d->geometry, g1);
-
-
-    // // OO
-    // // OO
-
-    // CH_Geometry* g2 = CH_Geometry_Create(
-    //     CH_Vector_Create(i-1, heights[i-1][j-1], j-1),
-    //     CH_Vector_Create(i, heights[i][j], j),
-    //     CH_Vector_Create(i, heights[i][j-1], j-1)
-    // );
-    // g2->color = color;
-
-    // CH_Array_Append(app.renderer3d->geometry, g2);
 }
 
 void initialize(void) {
@@ -240,6 +210,9 @@ void initialize(void) {
 
     app.renderer3d = CH_Renderer_Create(WIDTH, HEIGHT);
     app.renderer3d->camera->render_distance = 999;
+
+    app.renderer3d->camera->pitch = 30;
+    app.renderer3d->camera->yaw = 45;
 
     make_ground_mesh();
 

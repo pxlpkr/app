@@ -12,8 +12,6 @@ typedef struct {
 
     int width;
     int height;
-
-    double t_lump;
 } CH_Renderer;
 
 extern CH_Renderer* CH_Renderer_Create(int width, int height);

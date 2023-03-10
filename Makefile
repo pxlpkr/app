@@ -17,10 +17,10 @@ mkbin:
 	mkdir -p bin/src
 
 %.o: src/%.c mkbin
-	cc -o bin/src/$@ -c $(INCLUDE_FILES) $<
+	cc -o bin/src/$@ -c $(INCLUDE_FILES) -O2 $<
 
 build: chenge window.o
-	cc -o bin/app bin/src/window.o $(CHENGE_FILES) $(LIB_LINKS)
+	cc -o bin/app bin/src/window.o $(CHENGE_FILES) $(LIB_LINKS) -O2
 
 pong: pong.o
 	cc -o bin/pong bin/src/pong.o $(LIB_LINKS)

@@ -27,7 +27,7 @@ double rad(double degrees) {
     return PI * degrees / 180;
 }
 
-CH_Vector* CH_Camera_GetRelativeCoordinates(CH_Camera* camera, CH_Vector* v) {
+CH_Vector CH_Camera_GetRelativeCoordinates(CH_Camera* camera, CH_Vector* v) {
     double x, y, z, x_, y_, z_;
 
     x = v->x-camera->x;
@@ -40,10 +40,11 @@ CH_Vector* CH_Camera_GetRelativeCoordinates(CH_Camera* camera, CH_Vector* v) {
 
     z_ = sin(rad(90+camera->pitch)) * z_ - cos(rad(90+camera->pitch)) * y;
 
-    return CH_Vector_Create(x_, y_, z_);
+    CH_Vector r = {x_, y_, z_};
+    return r;
 }
 
-CH_Point* CH_Camera_Transform(CH_Camera* camera, CH_Vector* vec) {
+CH_Point CH_Camera_Transform(CH_Camera* camera, CH_Vector* vec) {
     int max_dimension;
     int x, y;
 
@@ -53,14 +54,15 @@ CH_Point* CH_Camera_Transform(CH_Camera* camera, CH_Vector* vec) {
         max_dimension = camera->view_width;
 
     if (vec->z <= 0.0001) {
-        x = (int) (camera->view_width /2 + (max_dimension/2)*vec->x);
-        y = (int) (camera->view_height/2 + (max_dimension/2)*vec->y);
+        x = (int) (camera->view_width  * 0.5 + (max_dimension * 0.5)*vec->x);
+        y = (int) (camera->view_height * 0.5 + (max_dimension * 0.5)*vec->y);
     } else {
-        x = (int) (camera->view_width /2 + (max_dimension/2)*vec->x/vec->z);
-        y = (int) (camera->view_height/2 + (max_dimension/2)*vec->y/vec->z);
+        x = (int) (camera->view_width  * 0.5 + (max_dimension * 0.5)*vec->x/vec->z);
+        y = (int) (camera->view_height * 0.5 + (max_dimension * 0.5)*vec->y/vec->z);
     }
-    
-    return CH_Point_Create(x, y);
+
+    CH_Point r = {x, y};
+    return r;
 }
 
 void CH_Camera_MoveRelative(CH_Camera* camera, double x, double y, double z) {
