@@ -24,3 +24,11 @@ CH_Vector* CH_Vector_Sum(CH_Vector* a, CH_Vector* b) {
 double CH_Vector_GetMagnitude(CH_Vector* v) {
     return sqrt(pow(v->x, 2) + pow(v->y, 2) + pow(v->z, 2));
 }
+
+CH_Vector* CH_Vector_CrossProduct(CH_Vector* a, CH_Vector* b) {
+    return CH_Vector_Create(
+        a->y * b->z - a->z * b->y,
+        a->z * b->x - a->x * b->z,
+        a->x * b->y - a->y * b->x
+    );
+}

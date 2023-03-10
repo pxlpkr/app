@@ -5,9 +5,11 @@
 #include "CHenge/array.h"
 
 #define MAX_FPS     60
-#define WIDTH       400
-#define HEIGHT      400
+#define WIDTH       800
+#define HEIGHT      600
 #define TITLE       "Window"
+
+#define MAX_INT     2147483647
 
 struct {
     SDL_Window* window;
@@ -33,8 +35,55 @@ void event_handler(void) {
     }
 }
 
+void kb_handler() {
+    const u_int8_t* pressed_keys = SDL_GetKeyboardState(NULL);
+
+    double moveSpeed = 0.05;
+    if (pressed_keys[SDL_SCANCODE_R])
+        moveSpeed *= 5;
+    else if (pressed_keys[SDL_SCANCODE_LSHIFT] || pressed_keys[SDL_SCANCODE_RSHIFT])
+        moveSpeed *= 0.5;
+
+    if (pressed_keys[SDL_SCANCODE_W]) {
+        CH_Camera_MoveRelative(app.renderer3d->camera, 0, 0, moveSpeed);
+    }
+    if (pressed_keys[SDL_SCANCODE_A]) {
+        CH_Camera_MoveRelative(app.renderer3d->camera, -moveSpeed, 0, 0);
+    }
+    if (pressed_keys[SDL_SCANCODE_S]) {
+        CH_Camera_MoveRelative(app.renderer3d->camera, 0, 0, -moveSpeed);
+    }
+    if (pressed_keys[SDL_SCANCODE_D]) {
+        CH_Camera_MoveRelative(app.renderer3d->camera, moveSpeed, 0, 0);
+    }
+    if (pressed_keys[SDL_SCANCODE_SPACE]) {
+        CH_Camera_MoveRelative(app.renderer3d->camera, 0, -moveSpeed, 0);
+    }
+    if (pressed_keys[SDL_SCANCODE_LSHIFT] || pressed_keys[SDL_SCANCODE_RSHIFT]) {
+        CH_Camera_MoveRelative(app.renderer3d->camera, 0, 2 * moveSpeed, 0);
+    }
+
+    float rotateSpeed = 3;
+    if (pressed_keys[SDL_SCANCODE_RIGHT]) {
+        CH_Camera_RotateYaw(app.renderer3d->camera, rotateSpeed);
+    }
+    if (pressed_keys[SDL_SCANCODE_LEFT]) {
+        CH_Camera_RotateYaw(app.renderer3d->camera, -rotateSpeed);
+    }
+    if (pressed_keys[SDL_SCANCODE_UP]) {
+        CH_Camera_RotatePitch(app.renderer3d->camera, -rotateSpeed);
+    }
+    if (pressed_keys[SDL_SCANCODE_DOWN]) {
+        CH_Camera_RotatePitch(app.renderer3d->camera, rotateSpeed);
+    }
+}
+
 void iterate_game_loop(void) {
+    clock_t start = clock();
+
     event_handler();
+
+    kb_handler();
 
     memset(app.buffer, 0, sizeof(app.buffer));
     CH_Renderer_Render(app.renderer3d, app.buffer);
@@ -53,8 +102,116 @@ void iterate_game_loop(void) {
     );
     SDL_RenderPresent(app.renderer);
 
-    struct timespec delay = {0, 1000000000 / MAX_FPS};
-    nanosleep(&delay, NULL);
+    clock_t end = clock();
+
+    double time_elapsed = (double) (end - start) * 1000.0 / CLOCKS_PER_SEC;
+
+    double delay_nanos = 1000000000 / MAX_FPS - time_elapsed * 1000000;
+
+    if (delay_nanos > 0) {
+        struct timespec delay = {0, delay_nanos};
+        nanosleep(&delay, NULL);
+    }
+
+    // printf("%f \n", app.renderer3d->t_lump);
+    // app.renderer3d->t_lump = 0;
+}
+
+void make_ground_mesh(void) {
+    int W = 100;
+    int H = 100;
+    double heights[W][H];
+
+    for (int i = 0; i < W; i++) {
+        for (int j = 0; j < W; j++) {
+            if (i == 0) {
+                if (j == 0) {
+                    heights[i][j] = 10;
+                } else {
+                    heights[i][j] = heights[i][j-1] + (double) rand() * 2 / MAX_INT - 1;
+                }
+            } else {
+                if (j == 0) {
+                    heights[i][j] = heights[i-1][j] + (double) rand() * 2 / MAX_INT - 1;
+                } else {
+                    heights[i][j] = (heights[i][j-1]+heights[i-1][j])/2 + (double) rand() * 2 / MAX_INT - 1;
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < W - 1; i++) {
+        for (int j = 0; j < H - 1; j++) {
+            CH_Geometry* g1 = CH_Geometry_Create(
+                CH_Vector_Create(i+1, heights[i+1][j+1], j+1),
+                CH_Vector_Create(i+1, heights[i+1][j], j),
+                CH_Vector_Create(i, heights[i][j], j)
+            );
+
+            g1->color = 0x007832FF + rand() % 180 * 0x100 * 0x100 * 0x100;
+
+            CH_Array_Append(app.renderer3d->geometry, g1);
+
+            CH_Geometry* g2 = CH_Geometry_Create(
+                CH_Vector_Create(i+1, heights[i+1][j+1], j+1),
+                CH_Vector_Create(i, heights[i][j], j),
+                CH_Vector_Create(i, heights[i][j+1], j+1)
+            );
+
+            g2->color = 0x007832FF + rand() % 180 * 0x100 * 0x100 * 0x100;
+
+            CH_Array_Append(app.renderer3d->geometry, g2);
+        }
+    }
+
+    // for (int i = 0; i < W; i+=2) {
+    //     for (int j = 0; j < H; j+=2) {
+    //         if (j == H-1)
+    //             continue;
+
+    //         CH_Geometry* g = CH_Geometry_Create(
+    //             CH_Vector_Create(i-50, heights[i][j], j-50),
+    //             CH_Vector_Create(i-50, heights[i][j+1], j-49),
+    //             CH_Vector_Create(i-49, heights[i+1][j], j-50)
+    //         );
+    //         g->color = 0x007832FF + rand() % 180 * 0x100 * 0x100 * 0x100;
+
+    //         CH_Array_Append(app.renderer3d->geometry, g);
+
+    //         CH_Geometry* g2 = CH_Geometry_Create(
+    //             CH_Vector_Create(i-49, heights[i+1][j+1], j-49),
+    //             CH_Vector_Create(i-50, heights[i][j+1], j-49),
+    //             CH_Vector_Create(i-49, heights[i+1][j], j-50)
+    //         );
+    //         g2->color = 0x007832FF + rand() % 180 * 0x100 * 0x100 * 0x100;
+
+    //         CH_Array_Append(app.renderer3d->geometry, g2);
+    //     }
+    // }
+
+    //u_int32_t color = 0x007832FF + rand() % 180 * 0x100 * 0x100 * 0x100;
+
+    // CH_Geometry* g1 = CH_Geometry_Create(
+    //     CH_Vector_Create(i-1, heights[i-1][j-1], j-1),
+    //     CH_Vector_Create(i-1, heights[i-1][j  ], j),
+    //     CH_Vector_Create(i-1, heights[i-1][j-1], j-1)
+    // );
+    // g1->color = color;
+
+    // CH_Array_Append(app.renderer3d->geometry, g1);
+
+
+    // // OO
+    // // OO
+
+    // CH_Geometry* g2 = CH_Geometry_Create(
+    //     CH_Vector_Create(i-1, heights[i-1][j-1], j-1),
+    //     CH_Vector_Create(i, heights[i][j], j),
+    //     CH_Vector_Create(i, heights[i][j-1], j-1)
+    // );
+    // g2->color = color;
+
+    // CH_Array_Append(app.renderer3d->geometry, g2);
 }
 
 void initialize(void) {
@@ -82,12 +239,15 @@ void initialize(void) {
     );
 
     app.renderer3d = CH_Renderer_Create(WIDTH, HEIGHT);
+    app.renderer3d->camera->render_distance = 999;
 
-    CH_Array_Append(app.renderer3d->geometry, CH_Geometry_Create(
-        CH_Vector_Create(10, 10, 10),
-        CH_Vector_Create(200, 10, 15),
-        CH_Vector_Create(20, 30, 10)
-    ));
+    make_ground_mesh();
+
+    // CH_Array_Append(app.renderer3d->geometry, CH_Geometry_Create(
+    //     CH_Vector_Create(-4, 4, 10),
+    //     CH_Vector_Create(-4, 0, 10),
+    //     CH_Vector_Create(4, 0, 10)
+    // ));
 }
 
 int main() {

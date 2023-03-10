@@ -10,4 +10,5 @@ extern CH_Vector* CH_Vector_Create(double x, double y, double z);
 extern void CH_Vector_Destroy(CH_Vector* vector);
 
 extern CH_Vector* CH_Vector_Sum(CH_Vector* a, CH_Vector* b);
+extern CH_Vector* CH_Vector_CrossProduct(CH_Vector* a, CH_Vector* b);
 extern double CH_Vector_GetMagnitude(CH_Vector* v);
