@@ -30,13 +30,6 @@ void CH_Renderer_Destroy(CH_Renderer* renderer) {
     free(renderer);
 }
 
-int z_positive(CH_Vector vecs[]) {
-    for (int i = 0; i < 3; i++)
-        if (vecs[i].z > 0)
-            return 1;
-    return 0;
-}
-
 void render_pixel(CH_Renderer* renderer, u_int32_t buffer[], int x, int y, u_int32_t color) {
     if (x < 0 || x >= renderer->width || y < 0 || y >= renderer->height)
         return;
@@ -69,6 +62,17 @@ double get_avg_dist(CH_Vector locations[]) {
     return dist / 3;
 }
 
+double get_z(CH_Renderer* renderer, CH_Point p[], CH_Vector v[], int x, int y) {
+    CH_Point b = {
+        ((p[1].y-p[2].y)*(x-p[2].x)+(p[2].x-p[1].x)*(y-p[2].y))/((p[1].y-p[2].y)*(p[0].x-p[2].x)+(p[2].x-p[1].x)*(p[0].y-p[2].y)),
+        ((p[2].y-p[0].y)*(x-p[2].x)+(p[0].x-p[2].x)*(y-p[2].y))/((p[1].y-p[2].y)*(p[0].x-p[2].x)+(p[2].x-p[1].x)*(p[0].y-p[2].y))
+    };
+
+    double r = v[0].z*b.x+v[1].z*b.y+v[2].z*(1-b.x-b.y);
+
+    return r;
+}
+
 void render_geometry(CH_Renderer* renderer, CH_Geometry* geometry, u_int32_t buffer[], double zbuffer[]) {
 
     CH_Vector locations3d[] = {
@@ -77,7 +81,7 @@ void render_geometry(CH_Renderer* renderer, CH_Geometry* geometry, u_int32_t buf
         CH_Camera_GetRelativeCoordinates(renderer->camera, geometry->vertices[2])
     };
     
-    if (!z_positive(locations3d))
+    if (locations3d[0].z < 0 && locations3d[1].z < 0 && locations3d[2].z < 0)
         return;
 
     int min_x = renderer->width;
@@ -85,13 +89,11 @@ void render_geometry(CH_Renderer* renderer, CH_Geometry* geometry, u_int32_t buf
     int min_y = renderer->height;
     int max_y = 0;
 
-    //#Runtime || 6.4 - 6.7 ms
     CH_Point locations2d[] = {
         CH_Camera_Transform(renderer->camera, &locations3d[0]),
         CH_Camera_Transform(renderer->camera, &locations3d[1]),
         CH_Camera_Transform(renderer->camera, &locations3d[2])
     };
-    //#End
 
     for (int i = 0; i < 3; i++) {
         CH_Point p = locations2d[i];
@@ -118,6 +120,7 @@ void render_geometry(CH_Renderer* renderer, CH_Geometry* geometry, u_int32_t buf
 
     for (int x = min_x; x < max_x; x++) {
         for (int y = min_y; y < max_y; y++) {
+            // double dist = get_z(renderer, locations2d, locations3d, x, y);
             if (dist < zbuffer[y * renderer->width + x] && get_in_triangle(x, y, locations2d)) {
                 zbuffer[y * renderer->width + x] = dist;
                 render_pixel(renderer, buffer, x, y, geometry->color);
