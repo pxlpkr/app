@@ -62,7 +62,7 @@ void kb_handler(void) {
         CH_Camera_MoveRelative(app.renderer3d->camera, moveSpeed, 0, 0);
     }
     if (pressed_keys[SDL_SCANCODE_SPACE]) {
-        // CH_Camera_MoveRelative(app.renderer3d->camera, 0, -moveSpeed, 0);
+        CH_Camera_MoveRelative(app.renderer3d->camera, 0, -moveSpeed, 0);
         if (app.cam_dy == 0)
             app.cam_dy -= 0.3;
     }
@@ -91,27 +91,27 @@ void kb_handler(void) {
 }
 
 void physics_handler(void) {
-    double height;
-    int x = app.renderer3d->camera->x;
-    int y = app.renderer3d->camera->y;
-    int z = app.renderer3d->camera->z;
+    // double height;
+    // int x = app.renderer3d->camera->x;
+    // int y = app.renderer3d->camera->y;
+    // int z = app.renderer3d->camera->z;
 
-    if (x >= 0 && x < 199 && z >= 0 && z < 199) {
-        height = app.heights[x][z] * fmod(x, 1) * fmod(z, 1)
-                +app.heights[x+1][z] * (1-fmod(x, 1)) * fmod(z, 1)
-                +app.heights[x+1][z+1] * (1-fmod(x, 1)) * (1-fmod(z, 1))
-                +app.heights[x][z+1] * fmod(x, 1) * (1-fmod(z, 1)) - 2;
-    } else {
-        height = 10;
-    }
+    // if (x >= 0 && x < 199 && z >= 0 && z < 199) {
+    //     height = app.heights[x][z] * fmod(x, 1) * fmod(z, 1)
+    //             +app.heights[x+1][z] * (1-fmod(x, 1)) * fmod(z, 1)
+    //             +app.heights[x+1][z+1] * (1-fmod(x, 1)) * (1-fmod(z, 1))
+    //             +app.heights[x][z+1] * fmod(x, 1) * (1-fmod(z, 1)) - 2;
+    // } else {
+    //     height = 10;
+    // }
     
-    app.renderer3d->camera->y += app.cam_dy;
-    if (app.renderer3d->camera->y >= height) {
-        app.renderer3d->camera->y = height;
-        app.cam_dy = 0;
-    } else {
-        app.cam_dy += 0.02;
-    }
+    // app.renderer3d->camera->y += app.cam_dy;
+    // if (app.renderer3d->camera->y >= height) {
+    //     app.renderer3d->camera->y = height;
+    //     app.cam_dy = 0;
+    // } else {
+    //     app.cam_dy += 0.02;
+    // }
 }
 
 void iterate_game_loop(void) {
@@ -155,7 +155,7 @@ void iterate_game_loop(void) {
         nanosleep(&delay, NULL);
     }
 
-    printf("%f ms \n", time_elapsed);
+    // printf("%f ms \n", time_elapsed);
 }
 
 u_int32_t get_mesh_color() {
@@ -259,6 +259,28 @@ void make_ground_mesh2(void) {
     }
 }
 
+void make_zbuffer_demo_area(void) {
+    CH_Geometry* g1 = CH_Geometry_Create(
+        CH_Vector_Create(0, 0, 0),
+        CH_Vector_Create(0, 5, 0),
+        CH_Vector_Create(5, 2.5, 5)
+    );
+
+    g1->color = get_mesh_color();
+
+    CH_Array_Append(app.renderer3d->geometry, g1);
+
+    CH_Geometry* g2 = CH_Geometry_Create(
+        CH_Vector_Create(5, 1, 0),
+        CH_Vector_Create(5, 4, 0),
+        CH_Vector_Create(0, 2.5, 5)
+    );
+
+    g2->color = get_mesh_color();
+
+    CH_Array_Append(app.renderer3d->geometry, g2);
+}
+
 void initialize(void) {
     app.window = SDL_CreateWindow(
         TITLE,
@@ -300,7 +322,8 @@ void initialize(void) {
     // app.renderer3d->camera->pitch = 30;
     // app.renderer3d->camera->yaw = 45;
 
-    make_ground_mesh2();
+    // make_ground_mesh2();
+    make_zbuffer_demo_area();
 
     // CH_Array_Append(app.renderer3d->geometry, CH_Geometry_Create(
     //     CH_Vector_Create(-4, 4, 10),
@@ -310,6 +333,7 @@ void initialize(void) {
 }
 
 int main() {
+
     initialize();
 
     while (!app.exit_requested)
